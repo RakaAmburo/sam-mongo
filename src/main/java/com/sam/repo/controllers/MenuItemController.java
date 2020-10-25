@@ -4,17 +4,21 @@ import com.github.javafaker.Faker;
 import com.sam.repo.entities.MenuItem;
 import com.sam.repo.entities.MenuItemDTO;
 import com.sam.repo.repositories.MenuItemRepository;
+import com.sam.repo.webClients.MongoRepoClient;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.PropertyMap;
 import org.modelmapper.spi.MappingContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -38,19 +42,31 @@ public class MenuItemController {
         }
       };
   private MenuItemRepository menuItemRepository;
+  private MongoRepoClient mongoRepoClient;
   private ModelMapper modelMapper;
 
   @Autowired
-  public MenuItemController(MenuItemRepository menuRepository) {
+  public MenuItemController(MenuItemRepository menuRepository, MongoRepoClient mongoRepoClient) {
     this.menuItemRepository = menuRepository;
     modelMapper = new ModelMapper();
     // modelMapper.addMappings(skipModifiedFieldsMap);
     modelMapper.addMappings(skipModifiedFieldsMap);
+    this.mongoRepoClient = mongoRepoClient;
   }
 
-  @GetMapping()
-  Flux<MenuItem> getAll() {
-    return this.menuItemRepository.findAll();
+  @GetMapping(produces = MediaType.APPLICATION_STREAM_JSON_VALUE)
+  Flux<List<MenuItem>> getAll() {
+    return this.menuItemRepository
+        .findAll()
+        .buffer(3)
+        .delayElements(Duration.ofSeconds(1))
+        ;
+  }
+
+  @GetMapping("testFlux")
+  String test() {
+    mongoRepoClient.getMenuItemList();
+    return "done!";
   }
 
   @GetMapping("/{id}")
@@ -73,7 +89,7 @@ public class MenuItemController {
             .id(UUID.randomUUID().toString())
             .title(faker.food().dish())
             .description(faker.gameOfThrones().quote())
-            .price(new BigDecimal(faker.number().randomDouble(2, 1,10)))
+            .price(new BigDecimal(faker.number().randomDouble(2, 1, 10)))
             .build();
 
     return menuItemDTO;
