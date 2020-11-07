@@ -25,7 +25,7 @@ public class ControllingRSocket {
         return pingSignal;
     }
 
-    @MessageMapping("channel")
+    @MessageMapping("mongoChannel")
     Flux<BigRequest> channel(RSocketRequester clientRSocketConnection, Flux<BigRequest> bigRequestFlux) {
 
         return Flux.create(
@@ -33,6 +33,7 @@ public class ControllingRSocket {
                     bigRequestFlux
                             .doOnNext(
                                     i -> {
+                                        System.out.println(i.getId());
                                         sink.next(i);
                                     })
                             .subscribe();
