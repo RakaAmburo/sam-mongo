@@ -17,7 +17,7 @@ public class ControllingRSocket {
     @MessageMapping("startPing")
     Flux<String> startPing() {
 
-
+        System.out.println("iniciamos ping");
         Flux<String> pingSignal =
                 Flux.fromStream(Stream.generate(() -> "ping")).delayElements(Duration.ofMillis(1000));
 
