@@ -33,7 +33,7 @@ public class ControllingRSocket {
                     bigRequestFlux
                             .doOnNext(
                                     i -> {
-                                        System.out.println(i.getId());
+                                        //System.out.println(i.getId());
                                         sink.next(i);
                                     })
                             .subscribe();
