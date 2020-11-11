@@ -27,7 +27,7 @@ public class ControllingRSocket {
 
     @MessageMapping("mongoChannel")
     Flux<BigRequest> channel(RSocketRequester clientRSocketConnection, Flux<BigRequest> bigRequestFlux) {
-        System.out.println("llegamos al mongo");
+        System.out.println("arrived to mongo");
         return Flux.create(
                 (FluxSink<BigRequest> sink) -> {
                     bigRequestFlux
