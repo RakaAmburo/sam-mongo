@@ -54,13 +54,19 @@ public class MenuItemController {
     this.mongoRepoClient = mongoRepoClient;
   }
 
-  @GetMapping(produces = MediaType.APPLICATION_STREAM_JSON_VALUE)
+  /*@GetMapping(produces = MediaType.APPLICATION_STREAM_JSON_VALUE)
   Flux<List<MenuItem>> getAll() {
     return this.menuItemRepository
         .findAll()
         .buffer(3)
         .delayElements(Duration.ofSeconds(1))
         ;
+  }*/
+
+  @GetMapping()
+  Flux<MenuItem> getAll() {
+    return this.menuItemRepository
+            .findAll();
   }
 
   @GetMapping("testFlux")
