@@ -1,14 +1,18 @@
 package com.sam.repo.controllers;
 
 import com.sam.commons.entities.BigRequest;
+import com.sam.commons.entities.MenuItemReq;
+import com.sam.repo.entities.MenuItem;
 import com.sam.repo.repositories.MenuItemRepository;
 import lombok.extern.log4j.Log4j2;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.rsocket.RSocketRequester;
 import org.springframework.stereotype.Controller;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.UnicastProcessor;
 
 import java.time.Duration;
 import java.util.stream.Stream;
@@ -18,10 +22,12 @@ import java.util.stream.Stream;
 public class ControllingRSocket {
 
   private MenuItemRepository menuItemRepository;
+  private ModelMapper modelMapper;
 
   @Autowired
   public ControllingRSocket(MenuItemRepository menuRepository) {
     this.menuItemRepository = menuRepository;
+    this.modelMapper = new ModelMapper();
   }
 
   @MessageMapping("startPing")
@@ -51,7 +57,27 @@ public class ControllingRSocket {
   }
 
   @MessageMapping("menuItemChannel")
-  Flux<BigRequest> menuItemChannel(Flux<BigRequest> bigRequestFlux) {
-    return Flux.empty();
+  Flux<MenuItemReq> menuItemChannel(Flux<MenuItemReq> menuItemReqFlux) {
+
+    UnicastProcessor<MenuItemReq> responseStream = UnicastProcessor.create();
+    FluxSink<MenuItemReq> responseSink = responseStream.sink();
+
+    menuItemReqFlux
+            .doOnNext(
+                    menuItemReq -> {
+                      // System.out.println(i.getId());
+                      switch (menuItemReq.getAction()){
+                        case INSERT:
+                          MenuItem menuItem = modelMapper.map(menuItemReq.getMenuItemDTO(), MenuItem.class);
+                          this.menuItemRepository.insert(menuItem).doOnSuccess(mono -> {
+                            responseSink.next(menuItemReq);
+                          }).block();
+                          break;
+                      }
+                      //sink.next(menuItemReq);
+                    })
+            .subscribe();
+
+    return responseStream;
   }
 }
