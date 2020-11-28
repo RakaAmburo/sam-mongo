@@ -1,7 +1,9 @@
 package com.sam.repo.controllers;
 
 import com.sam.commons.entities.BigRequest;
+import com.sam.commons.entities.MenuItemDTO;
 import com.sam.commons.entities.MenuItemReq;
+import com.sam.commons.entities.Status;
 import com.sam.repo.entities.MenuItem;
 import com.sam.repo.repositories.MenuItemRepository;
 import lombok.extern.log4j.Log4j2;
@@ -69,7 +71,9 @@ public class ControllingRSocket {
                       switch (menuItemReq.getAction()){
                         case INSERT:
                           MenuItem menuItem = modelMapper.map(menuItemReq.getMenuItemDTO(), MenuItem.class);
-                          this.menuItemRepository.insert(menuItem).doOnSuccess(mono -> {
+                          this.menuItemRepository.insert(menuItem).doOnSuccess(menuItemMono -> {
+                            menuItemReq.setStatus(Status.OK);
+                            menuItemReq.setMenuItemDTO(modelMapper.map(menuItemMono, MenuItemDTO.class));
                             responseSink.next(menuItemReq);
                           }).subscribe();
                           break;
