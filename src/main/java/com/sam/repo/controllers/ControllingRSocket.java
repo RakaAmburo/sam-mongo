@@ -71,7 +71,7 @@ public class ControllingRSocket {
                           MenuItem menuItem = modelMapper.map(menuItemReq.getMenuItemDTO(), MenuItem.class);
                           this.menuItemRepository.insert(menuItem).doOnSuccess(mono -> {
                             responseSink.next(menuItemReq);
-                          }).block();
+                          }).subscribe();
                           break;
                       }
                       //sink.next(menuItemReq);
