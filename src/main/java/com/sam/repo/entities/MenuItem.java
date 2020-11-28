@@ -1,6 +1,7 @@
 package com.sam.repo.entities;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
@@ -9,6 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.List;
 
 @Getter
+@Setter
 @Document(collection = "menuItems")
 @CompoundIndexes({
   @CompoundIndex(name = "rest_lang", def = "{'restaurantId' : 1, 'languageId': 1}", unique = true)
