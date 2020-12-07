@@ -61,26 +61,64 @@ public class ControllingRSocket {
   @MessageMapping("menuItemChannel")
   Flux<MenuItemReq> menuItemChannel(Flux<MenuItemReq> menuItemReqFlux) {
 
+    return processMenuItemRequest(menuItemReqFlux);
+  }
+
+  @MessageMapping("deleteMenuItemChannel")
+  Flux<MenuItemReq> deleteMenuItemChannel(Flux<MenuItemReq> menuItemReqFlux) {
+
+    return processMenuItemRequest(menuItemReqFlux);
+  }
+
+  private Flux<MenuItemReq> processMenuItemRequest(Flux<MenuItemReq> menuItemReqFlux) {
+
     UnicastProcessor<MenuItemReq> responseStream = UnicastProcessor.create();
     FluxSink<MenuItemReq> responseSink = responseStream.sink();
 
     menuItemReqFlux
-            .doOnNext(
-                    menuItemReq -> {
-                      // System.out.println(i.getId());
-                      switch (menuItemReq.getAction()){
-                        case INSERT:
-                          MenuItem menuItem = modelMapper.map(menuItemReq.getMenuItemDTO(), MenuItem.class);
-                          this.menuItemRepository.insert(menuItem).doOnSuccess(menuItemMono -> {
+        .doOnNext(
+            menuItemReq -> {
+              // System.out.println(i.getId());
+              MenuItem menuItem = modelMapper.map(menuItemReq.getMenuItemDTO(), MenuItem.class);
+              switch (menuItemReq.getAction()) {
+                case INSERT:
+                  this.menuItemRepository
+                      .insert(menuItem)
+                      .doOnSuccess(
+                          menuItemMono -> {
                             menuItemReq.setStatus(Status.OK);
-                            menuItemReq.setMenuItemDTO(modelMapper.map(menuItemMono, MenuItemDTO.class));
+                            menuItemReq.setMenuItemDTO(
+                                modelMapper.map(menuItemMono, MenuItemDTO.class));
                             responseSink.next(menuItemReq);
-                          }).subscribe();
-                          break;
-                      }
-                      //sink.next(menuItemReq);
-                    })
-            .subscribe();
+                          })
+                      .subscribe();
+                  break;
+                case UPDATE:
+                  this.menuItemRepository
+                      .save(menuItem)
+                      .doOnSuccess(
+                          menuItemMono -> {
+                            menuItemReq.setStatus(Status.OK);
+                            menuItemReq.setMenuItemDTO(
+                                modelMapper.map(menuItemMono, MenuItemDTO.class));
+                            responseSink.next(menuItemReq);
+                          })
+                      .subscribe();
+
+                case DELETE:
+                  this.menuItemRepository
+                      .delete(menuItem)
+                      .doOnSuccess(
+                          menuItemMono -> {
+                            menuItemReq.setStatus(Status.OK);
+                            responseSink.next(menuItemReq);
+                          })
+                      .subscribe();
+                  break;
+              }
+              // sink.next(menuItemReq);
+            })
+        .subscribe();
 
     return responseStream;
   }
