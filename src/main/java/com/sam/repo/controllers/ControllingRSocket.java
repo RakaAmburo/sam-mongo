@@ -94,6 +94,7 @@ public class ControllingRSocket {
                       .doOnError(
                           error -> {
                             menuItemReq.setStatus(Status.ERROR);
+                            responseSink.next(menuItemReq);
                           })
                       .subscribe();
                   break;
