@@ -91,6 +91,10 @@ public class ControllingRSocket {
                                 modelMapper.map(menuItemMono, MenuItemDTO.class));
                             responseSink.next(menuItemReq);
                           })
+                      .doOnError(
+                          error -> {
+                            menuItemReq.setStatus(Status.ERROR);
+                          })
                       .subscribe();
                   break;
                 case UPDATE:
