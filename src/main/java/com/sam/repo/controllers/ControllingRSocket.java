@@ -17,7 +17,6 @@ import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.UnicastProcessor;
 
 import java.time.Duration;
-import java.util.stream.Stream;
 
 @Controller
 @Log4j2
@@ -36,8 +35,7 @@ public class ControllingRSocket {
   Flux<String> startPing() {
 
     System.out.println("iniciamos ping");
-    Flux<String> pingSignal =
-        Flux.fromStream(Stream.generate(() -> "ping")).delayElements(Duration.ofMillis(1000));
+    Flux<String> pingSignal = Flux.interval(Duration.ofMillis(1000)).map(i -> "ping");
 
     return pingSignal;
   }
