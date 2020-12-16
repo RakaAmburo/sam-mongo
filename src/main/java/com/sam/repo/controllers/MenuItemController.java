@@ -110,4 +110,19 @@ public class MenuItemController {
   public Mono<Void> update(@RequestBody Mono<MenuItem> menuItemMono) {
     return this.menuItemRepository.saveAll(menuItemMono).then();
   }
+
+  @DeleteMapping("/{id}")
+  public Mono<Void> delete(@PathVariable("id") String id){
+    return this.menuItemRepository.deleteById(id);
+  }
+
+  @DeleteMapping("/all")
+  public Mono<Void> deleteAll(){
+    return this.menuItemRepository.deleteAll();
+  }
+
+  @GetMapping("/count")
+  public Mono<Long> count(){
+    return this.menuItemRepository.count();
+  }
 }
