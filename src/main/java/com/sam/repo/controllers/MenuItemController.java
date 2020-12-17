@@ -116,12 +116,12 @@ public class MenuItemController {
     return this.menuItemRepository.deleteById(id);
   }
 
-  @DeleteMapping("/all")
+  @DeleteMapping("/all/delete")
   public Mono<Void> deleteAll(){
     return this.menuItemRepository.deleteAll();
   }
 
-  @GetMapping("/count")
+  @GetMapping("/all/count")
   public Mono<Long> count(){
     return this.menuItemRepository.count();
   }
