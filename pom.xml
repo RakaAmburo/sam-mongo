@@ -97,6 +97,24 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>localAllTest</id>
+            <properties>
+                <activatedProperties>localAllTest</activatedProperties>
+            </properties>
+        </profile>
+        <profile>
+            <id>aws</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <activatedProperties>aws</activatedProperties>
+            </properties>
+        </profile>
+    </profiles>
+
     <build>
         <plugins>
             <plugin>
