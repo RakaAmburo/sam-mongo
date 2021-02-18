@@ -1,0 +1,38 @@
+
+
+
+ssh -o ServerAliveInterval=60 -i "firstKey.pem" ubuntu@ec2-18-224-0-99.us-east-2.compute.amazonaws.com
+
+aws ec2 describe-instances --filters "Name=instance-type,Values=t2.micro" --query "Reservations[*].Instances[*].{PrivateIp:PrivateIpAddress,dns:PublicDnsName,pubIp:PublicIpAddress,Name:Tags[?Key=='Name']|[0].Value}" --output table
+
+bashrc
+my_ip=$(curl http://checkip.amazonaws.com)
+my_private=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
+my_dns=$(curl http://169.254.169.254/latest/meta-data/public-hostname)
+node_path=/home/ubuntu/mongo/newVerNode/
+
+
+openssl genrsa -out mongoCA.key -aes256 8192
+openssl req -x509 -new -extensions v3_ca -key mongoCA.key -days 365 -out mongoCA.crt
+
+openssl req -new -nodes -newkey rsa:4096 -keyout mongo3.key -out mongo3.csr
+openssl x509 -CA mongoCA.crt -CAkey mongoCA.key -CAcreateserial -req -days 365 -in mongo3.csr -out mongo3.crt
+cat psmdb1.key psmdb1.crt > psmdb1.pem
+openssl pkcs12 -inkey mongo1.key -in mongo1.crt -export -out mongo1.pfx
+
+mongod --auth --dbpath $node_path --port 27026 --bind_ip $my_dns --tlsMode requireTLS --tlsCertificateKeyFile tls/mongo1.pem --tlsCAFile tls/mongoCA.crt --clusterAuthMode x509 --tlsClusterFile tls/mongo1.pem --replSet rs0 --fork --logpath logs/mongo.log
+
+mongo --tls --tlsCAFile tls/mongoCA.crt --tlsCertificateKeyFile tls/mongo1.pem --host $my_dns -u admin -p '1234qwer' --port 27026 -authenticationDatabase 'admin'
+
+change config:
+cfg = rs.conf()
+cfg.members[0].host = "mongodb0.example.net:27017"
+rs.reconfig(cfg)
+
+backup:
+mongodump --archive=C:\mongoBackUp\edpp-db-1 --host localhost:27018 -d edpp-db -u userTWE -p fXSObmt8cVX7Wgk4
+mongorestore --drop --archive=C:\mongoBackUp\edpp-db-1
+
+
+testing:
+java -cp "target/classes;C:\repos\sam\sam-commons\target\classes;C:\repos\mongoTest\lib\*" com.sam.repo.tests.MongoTest
