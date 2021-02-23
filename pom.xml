@@ -24,6 +24,11 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>-->
         <dependency>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
+            <version>0.9.11</version>
+        </dependency>
+        <dependency>
             <groupId>sam-commons</groupId>
             <artifactId>sam-commons</artifactId>
             <scope>system</scope>
@@ -98,6 +103,12 @@
     </dependencies>
 
     <profiles>
+        <profile>
+            <id>localtls</id>
+            <properties>
+                <activatedProperties>localtls</activatedProperties>
+            </properties>
+        </profile>
         <profile>
             <id>localAllTest</id>
             <properties>
