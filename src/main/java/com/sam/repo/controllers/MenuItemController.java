@@ -1,8 +1,10 @@
 package com.sam.repo.controllers;
 
 import com.github.javafaker.Faker;
+import com.sam.commons.entities.GroupsDTO;
+import com.sam.commons.entities.MenuItemDTO;
+import com.sam.commons.entities.PriceDTO;
 import com.sam.repo.entities.MenuItem;
-import com.sam.repo.entities.MenuItemDTO;
 import com.sam.repo.repositories.MenuItemRepository;
 import com.sam.repo.webClients.MongoRepoClient;
 import lombok.extern.slf4j.Slf4j;
@@ -11,13 +13,19 @@ import org.modelmapper.ModelMapper;
 import org.modelmapper.PropertyMap;
 import org.modelmapper.spi.MappingContext;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
-import java.time.Duration;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -65,8 +73,7 @@ public class MenuItemController {
 
   @GetMapping()
   Flux<MenuItem> getAll() {
-    return this.menuItemRepository
-            .findAll();
+    return this.menuItemRepository.findAll();
   }
 
   @GetMapping("testFlux")
@@ -90,12 +97,29 @@ public class MenuItemController {
   MenuItemDTO get() {
 
     Faker faker = new Faker(new Locale("ES"));
+    BigDecimal bd = new BigDecimal(faker.number().randomDouble(3, 1, 300));
+    bd = bd.setScale(3, RoundingMode.CEILING);
     MenuItemDTO menuItemDTO =
         MenuItemDTO.builder()
-            .id(UUID.randomUUID().toString())
+            .restaurantId(UUID.randomUUID().toString())
             .title(faker.food().dish())
+            .languageId(UUID.randomUUID().toString())
+            .groups(
+                List.of(
+                    GroupsDTO.builder()
+                        .id(UUID.randomUUID().toString())
+                        .title(faker.name().firstName())
+                        .description(faker.hobbit().quote())
+                        .parentId(UUID.randomUUID().toString())
+                        .build()))
             .description(faker.gameOfThrones().quote())
-            .price(new BigDecimal(faker.number().randomDouble(2, 1, 10)))
+            .prices(
+                List.of(
+                    PriceDTO.builder()
+                        .title(faker.name().lastName())
+                        .description(faker.backToTheFuture().quote())
+                        .amount(bd)
+                        .build()))
             .build();
 
     return menuItemDTO;
@@ -112,17 +136,17 @@ public class MenuItemController {
   }
 
   @DeleteMapping("/{id}")
-  public Mono<Void> delete(@PathVariable("id") String id){
+  public Mono<Void> delete(@PathVariable("id") String id) {
     return this.menuItemRepository.deleteById(id);
   }
 
   @DeleteMapping("/all/delete")
-  public Mono<Void> deleteAll(){
+  public Mono<Void> deleteAll() {
     return this.menuItemRepository.deleteAll();
   }
 
   @GetMapping("/all/count")
-  public Mono<Long> count(){
+  public Mono<Long> count() {
     return this.menuItemRepository.count();
   }
 }

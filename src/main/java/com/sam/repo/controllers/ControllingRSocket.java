@@ -91,6 +91,7 @@ public class ControllingRSocket {
                           })
                       .doOnError(
                           error -> {
+                            error.printStackTrace();
                             menuItemReq.setStatus(Status.ERROR);
                             responseSink.next(menuItemReq);
                           })
