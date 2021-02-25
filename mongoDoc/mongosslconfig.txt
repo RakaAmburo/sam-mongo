@@ -11,6 +11,10 @@ my_private=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
 my_dns=$(curl http://169.254.169.254/latest/meta-data/public-hostname)
 node_path=/home/ubuntu/mongo/newVerNode/
 
+https://catalin.works/blog/bind9-dns-setup-local-domain-names/
+https://aws.amazon.com/es/premiumsupport/knowledge-center/ec2-static-dns-ubuntu-debian/
+sudo systemd-resolve --flush-caches
+
 
 openssl genrsa -out mongoCA.key -aes256 8192
 openssl req -x509 -new -extensions v3_ca -key mongoCA.key -days 365 -out mongoCA.crt
