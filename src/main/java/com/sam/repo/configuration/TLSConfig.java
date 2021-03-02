@@ -22,10 +22,10 @@ public class TLSConfig {
 
   @PostConstruct
   private void configureTLS() {
-    System.setProperty("javax.net.ssl.trustStore", trustStore);
+    /*System.setProperty("javax.net.ssl.trustStore", trustStore);
     System.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword);
     System.setProperty("javax.net.ssl.keyStore", keyStore);
     System.setProperty("javax.net.ssl.keyStorePassword", keyStorePassword);
-    System.setProperty("jdk.tls.client.protocols", "TLSv1.2");
+    System.setProperty("jdk.tls.client.protocols", "TLSv1.2");*/
   }
 }

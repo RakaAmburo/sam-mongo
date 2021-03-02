@@ -30,7 +30,7 @@ mongo --tls --tlsCAFile tls/mongoCA.crt --tlsCertificateKeyFile tls/mongo1.pem -
 
 change config:
 cfg = rs.conf()
-cfg.members[0].host = "mongodb0.example.net:27017"
+cfg.members[0].host = "mongodb0.example.net:27026"
 rs.reconfig(cfg)
 
 backup:
