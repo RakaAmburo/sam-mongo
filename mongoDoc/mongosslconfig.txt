@@ -16,13 +16,24 @@ https://aws.amazon.com/es/premiumsupport/knowledge-center/ec2-static-dns-ubuntu-
 sudo systemd-resolve --flush-caches
 
 
-openssl genrsa -out mongoCA.key -aes256 8192
-openssl req -x509 -new -extensions v3_ca -key mongoCA.key -days 365 -out mongoCA.crt
+openssl genrsa -out mongoCA.key -aes256 8192   (strong clave)
+openssl req -x509 -new -extensions v3_ca -key mongoCA.key -days 365 -out mongoCA.crt (srv.mongoaurelio.xyz)
 
-openssl req -new -nodes -newkey rsa:4096 -keyout mongo3.key -out mongo3.csr
-openssl x509 -CA mongoCA.crt -CAkey mongoCA.key -CAcreateserial -req -days 365 -in mongo3.csr -out mongo3.crt
-cat psmdb1.key psmdb1.crt > psmdb1.pem
+openssl req -new -nodes -newkey rsa:4096 -keyout mongo1.key -out mongo1.csr (srv1.mongoaurelio.xyz)
+openssl x509 -CA mongoCA.crt -CAkey mongoCA.key -CAcreateserial -req -days 365 -in mongo1.csr -out mongo1.crt
+cat mongo1.key mongo1.crt > mongo1.pem
 openssl pkcs12 -inkey mongo1.key -in mongo1.crt -export -out mongo1.pfx
+
+openssl req -new -nodes -newkey rsa:4096 -keyout mongo2.key -out mongo2.csr (srv1.mongoaurelio.xyz)
+openssl x509 -CA mongoCA.crt -CAkey mongoCA.key -CAcreateserial -req -days 365 -in mongo2.csr -out mongo2.crt
+cat mongo.key mongo2.crt > mongo2.pem
+openssl pkcs12 -inkey mongo2.key -in mongo2.crt -export -out mongo2.pfx
+
+openssl req -new -nodes -newkey rsa:4096 -keyout mongo3.key -out mongo3.csr (srv1.mongoaurelio.xyz)
+openssl x509 -CA mongoCA.crt -CAkey mongoCA.key -CAcreateserial -req -days 365 -in mongo3.csr -out mongo3.crt
+cat mongo1.key mongo1.crt > mongo1.pem
+openssl pkcs12 -inkey mongo3.key -in mongo3.crt -export -out mongo3.pfx
+
 
 mongod --auth --dbpath $node_path --port 27026 --bind_ip $my_dns --tlsMode requireTLS --tlsCertificateKeyFile tls/mongo1.pem --tlsCAFile tls/mongoCA.crt --clusterAuthMode x509 --tlsClusterFile tls/mongo1.pem --replSet rs0 --fork --logpath logs/mongo.log
 
