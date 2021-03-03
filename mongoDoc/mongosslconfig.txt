@@ -15,14 +15,22 @@ https://catalin.works/blog/bind9-dns-setup-local-domain-names/
 https://aws.amazon.com/es/premiumsupport/knowledge-center/ec2-static-dns-ubuntu-debian/
 sudo systemd-resolve --flush-caches
 
+openssl req -x509 -new \
+-extensions v3_ca \
+-key mongoCA.key \
+-days 365 \
+-out mongoCA.crt \
+-subj "/C=ES/ST=BR/L=Gracia/O=Mine Company, Inc./OU=IT/CN=amazonaws.com"
 
-openssl genrsa -out mongoCA.key -aes256 8192   (strong clave)
-openssl req -x509 -new -extensions v3_ca -key mongoCA.key -days 365 -out mongoCA.crt (srv.mongoaurelio.xyz)
+openssl genrsa -aes256 -passout pass:1234qwer -out mongoCA.key 8192   (strong clave)
+//openssl req -x509 -new -extensions v3_ca -key mongoCA.key -days 365 -out mongoCA.crt (srv.mongoaurelio.xyz)
+openssl req -x509 -new -key mongoCA.key -days 365 -out mongoCA.crt -config openssl_ext.conf -passin pass:1234qwer
 
-openssl req -new -nodes -newkey rsa:4096 -keyout mongo1.key -out mongo1.csr (srv1.mongoaurelio.xyz)
-openssl x509 -CA mongoCA.crt -CAkey mongoCA.key -CAcreateserial -req -days 365 -in mongo1.csr -out mongo1.crt
+openssl req -new -nodes -newkey rsa:4096 -keyout mongo2.key -out mongo2.csr -config openssl_ext_node.conf
+//openssl req -new -nodes -newkey rsa:4096 -keyout mongo1.key -out mongo1.csr (srv1.mongoaurelio.xyz)
+openssl x509 -CA mongoCA.crt -CAkey mongoCA.key -CAcreateserial -req -days 365 -in mongo2.csr -out mongo2.crt -passin pass:1234qwer
 cat mongo1.key mongo1.crt > mongo1.pem
-openssl pkcs12 -inkey mongo1.key -in mongo1.crt -export -out mongo1.pfx
+openssl pkcs12 -inkey mongo1.key -in mongo1.crt -export -out mongo1.pfx -passout pass:
 
 openssl req -new -nodes -newkey rsa:4096 -keyout mongo2.key -out mongo2.csr (srv1.mongoaurelio.xyz)
 openssl x509 -CA mongoCA.crt -CAkey mongoCA.key -CAcreateserial -req -days 365 -in mongo2.csr -out mongo2.crt
@@ -31,13 +39,21 @@ openssl pkcs12 -inkey mongo2.key -in mongo2.crt -export -out mongo2.pfx
 
 openssl req -new -nodes -newkey rsa:4096 -keyout mongo3.key -out mongo3.csr (srv1.mongoaurelio.xyz)
 openssl x509 -CA mongoCA.crt -CAkey mongoCA.key -CAcreateserial -req -days 365 -in mongo3.csr -out mongo3.crt
-cat mongo1.key mongo1.crt > mongo1.pem
+cat mongo1.key mongo3.crt > mongo3.pem
 openssl pkcs12 -inkey mongo3.key -in mongo3.crt -export -out mongo3.pfx
 
+ssh -i /home/pablo/dumps/firstKey.pem ubuntu@ec2-3-131-159-91.us-east-2.compute.amazonaws.com "mkdir -p /home/ubuntu/tls/test"
+ssh -i /home/pablo/dumps/firstKey.pem ubuntu@ec2-3-17-23-64.us-east-2.compute.amazonaws.com "mkdir -p /home/ubuntu/tls/test"
+ssh -i /home/pablo/dumps/firstKey.pem ubuntu@ec2-18-224-0-99.us-east-2.compute.amazonaws.com "mkdir -p /home/ubuntu/tls/test"
 
-mongod --auth --dbpath $node_path --port 27026 --bind_ip $my_dns --tlsMode requireTLS --tlsCertificateKeyFile tls/mongo1.pem --tlsCAFile tls/mongoCA.crt --clusterAuthMode x509 --tlsClusterFile tls/mongo1.pem --replSet rs0 --fork --logpath logs/mongo.log
+scp -i /home/pablo/dumps/firstKey.pem mongo1.key ubuntu@ec2-3-131-159-91.us-east-2.compute.amazonaws.com:/home/ubuntu/tls/test
+scp -i /home/pablo/dumps/firstKey.pem mongo2.key ubuntu@ec2-3-17-23-64.us-east-2.compute.amazonaws.com:/home/ubuntu/tls/test
+scp -i /home/pablo/dumps/firstKey.pem mongo1.key ubuntu@ec2-18-224-0-99.us-east-2.compute.amazonaws.com:/home/ubuntu/tls/test
 
-mongo --tls --tlsCAFile tls/mongoCA.crt --tlsCertificateKeyFile tls/mongo1.pem --host $my_dns -u admin -p '1234qwer' --port 27026 -authenticationDatabase 'admin'
+mongod --auth --dbpath $node_path --port 27026 --bind_ip $my_dns --tlsMode requireTLS --tlsCertificateKeyFile tls/test/mongo2.pem --tlsCAFile tls/test/mongoCA.crt --clusterAuthMode x509 --tlsClusterFile tls/test/mongo2.pem --replSet rs0 --fork --logpath logs/mongo.log
+mongod --auth --dbpath $node_path --port 27026 --bind_ip $my_dns --tlsMode requireTLS --tlsCertificateKeyFile tls/test/mongo3.pem --tlsCAFile tls/test/mongoCA.crt --clusterAuthMode x509 --tlsClusterFile tls/test/mongo3.pem --replSet rs0 --fork --logpath logs/mongo.log
+
+mongo --tls --tlsCAFile tls/test/mongoCA.crt --tlsCertificateKeyFile tls/test/mongo3.pem --host $my_dns -u admin -p '1234qwer' --port 27026 -authenticationDatabase 'admin'
 
 change config:
 cfg = rs.conf()
@@ -47,6 +63,8 @@ rs.reconfig(cfg)
 backup:
 mongodump --archive=C:\mongoBackUp\edpp-db-1 --host localhost:27018 -d edpp-db -u userTWE -p fXSObmt8cVX7Wgk4
 mongorestore --drop --archive=C:\mongoBackUp\edpp-db-1
+
+mongo logrotate????
 
 
 testing:
