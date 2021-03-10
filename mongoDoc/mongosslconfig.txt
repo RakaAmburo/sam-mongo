@@ -32,6 +32,7 @@ openssl x509 -CA mongoCA.crt -CAkey mongoCA.key -CAcreateserial -req -days 365 -
 cat mongo1.key mongo1.crt > mongo1.pem
 openssl pkcs12 -inkey mongo1.key -in mongo1.crt -export -out mongo1.pfx -passout pass:
 
+
 openssl req -new -nodes -newkey rsa:4096 -keyout mongo2.key -out mongo2.csr (srv1.mongoaurelio.xyz)
 openssl x509 -CA mongoCA.crt -CAkey mongoCA.key -CAcreateserial -req -days 365 -in mongo2.csr -out mongo2.crt
 cat mongo.key mongo2.crt > mongo2.pem
@@ -52,7 +53,10 @@ scp -i /home/pablo/dumps/firstKey.pem mongo1.key ubuntu@ec2-18-224-0-99.us-east-
 
 mongod --auth --dbpath $node_path --port 27026 --bind_ip $my_dns --tlsMode requireTLS --tlsCertificateKeyFile tls/test/mongo2.pem --tlsCAFile tls/test/mongoCA.crt --clusterAuthMode x509 --tlsClusterFile tls/test/mongo2.pem --replSet rs0 --fork --logpath logs/mongo.log
 mongod --auth --dbpath $node_path --port 27026 --bind_ip $my_dns --tlsMode requireTLS --tlsCertificateKeyFile tls/test/mongo3.pem --tlsCAFile tls/test/mongoCA.crt --clusterAuthMode x509 --tlsClusterFile tls/test/mongo3.pem --replSet rs0 --fork --logpath logs/mongo.log
-
+*** good ones
+mongod --auth --dbpath $node_path --port 27026 --bind_ip $my_dns --tlsMode requireTLS --tlsCertificateKeyFile tls/auto/mongo.pem --tlsCAFile tls/auto/mongoCA.crt --clusterAuthMode x509 --tlsClusterFile tls/auto/mongo.pem --replSet rs0 --fork --logpath logs/mongo.log
+mongo --tls --tlsCAFile tls/auto/mongoCA.crt --tlsCertificateKeyFile tls/auto/mongo.pem --host $my_dns -u admin -p '1234qwer' --port 27026 -authenticationDatabase 'admin'
+***
 mongo --tls --tlsCAFile tls/test/mongoCA.crt --tlsCertificateKeyFile tls/test/mongo3.pem --host $my_dns -u admin -p '1234qwer' --port 27026 -authenticationDatabase 'admin'
 
 change config:
