@@ -3,7 +3,7 @@
 
 ssh -o ServerAliveInterval=60 -i "firstKey.pem" ubuntu@ec2-18-224-0-99.us-east-2.compute.amazonaws.com
 
-aws ec2 describe-instances --filters "Name=instance-type,Values=t2.micro" --query "Reservations[*].Instances[*].{PrivateIp:PrivateIpAddress,dns:PublicDnsName,pubIp:PublicIpAddress,Name:Tags[?Key=='Name']|[0].Value}" --output table
+aws ec2 describe-instances --filters "Name=instance-type,Values=t2.micro" --query "Reservations[*].Instances[*].{Id:InstanceId,PrivateIp:PrivateIpAddress,dns:PublicDnsName,Status:State.Name,pubIp:PublicIpAddress,Name:Tags[?Key=='Name']|[0].Value}" --output table
 
 bashrc
 my_ip=$(curl http://checkip.amazonaws.com)
@@ -54,15 +54,19 @@ scp -i /home/pablo/dumps/firstKey.pem mongo1.key ubuntu@ec2-18-224-0-99.us-east-
 mongod --auth --dbpath $node_path --port 27026 --bind_ip $my_dns --tlsMode requireTLS --tlsCertificateKeyFile tls/test/mongo2.pem --tlsCAFile tls/test/mongoCA.crt --clusterAuthMode x509 --tlsClusterFile tls/test/mongo2.pem --replSet rs0 --fork --logpath logs/mongo.log
 mongod --auth --dbpath $node_path --port 27026 --bind_ip $my_dns --tlsMode requireTLS --tlsCertificateKeyFile tls/test/mongo3.pem --tlsCAFile tls/test/mongoCA.crt --clusterAuthMode x509 --tlsClusterFile tls/test/mongo3.pem --replSet rs0 --fork --logpath logs/mongo.log
 *** good ones
-mongod --auth --dbpath $node_path --port 27026 --bind_ip $my_dns --tlsMode requireTLS --tlsCertificateKeyFile tls/auto/mongo.pem --tlsCAFile tls/auto/mongoCA.crt --clusterAuthMode x509 --tlsClusterFile tls/auto/mongo.pem --replSet rs0 --fork --logpath logs/mongo.log
-mongo --tls --tlsCAFile tls/auto/mongoCA.crt --tlsCertificateKeyFile tls/auto/mongo.pem --host $my_dns -u admin -p '1234qwer' --port 27026 -authenticationDatabase 'admin'
+mongod --auth --dbpath /home/ubuntu/mongo/auto --port 27026 --bind_ip srv3.mongoaurelio.xyz --tlsMode requireTLS --tlsCertificateKeyFile tls/auto/actual/mongo.pem --tlsCAFile tls/auto/actual/mongoCA.crt --clusterAuthMode x509 --tlsClusterFile tls/auto/actual/mongo.pem --replSet rs0 --fork --logpath logs/mongo.log
+mongo --tls --tlsCAFile tls/auto/actual/mongoCA.crt --tlsCertificateKeyFile tls/auto/actual/mongo.pem --host srv1.mongoaurelio.xyz -u admin -p '1234qwer' --port 27026 -authenticationDatabase 'admin'
 ***
 mongo --tls --tlsCAFile tls/test/mongoCA.crt --tlsCertificateKeyFile tls/test/mongo3.pem --host $my_dns -u admin -p '1234qwer' --port 27026 -authenticationDatabase 'admin'
 
 change config:
 cfg = rs.conf()
-cfg.members[0].host = "mongodb0.example.net:27026"
+cfg.members[0].host = "ec2-3-134-94-64.us-east-2.compute.amazonaws.com:27026"
 rs.reconfig(cfg)
+
+cfg.members[0].host = "ec2-3-134-94-64.us-east-2.compute.amazonaws.com:27026"
+cfg.members[1].host = "ec2-3-129-10-127.us-east-2.compute.amazonaws.com:27026"
+cfg.members[2].host = "ec2-18-218-178-126.us-east-2.compute.amazonaws.com:27026"
 
 backup:
 mongodump --archive=C:\mongoBackUp\edpp-db-1 --host localhost:27018 -d edpp-db -u userTWE -p fXSObmt8cVX7Wgk4
@@ -70,6 +74,36 @@ mongorestore --drop --archive=C:\mongoBackUp\edpp-db-1
 
 mongo logrotate????
 
+rs.stepDown()
+rs.printSecondaryReplicationInfo()
+rs.shutdownServer()
 
 testing:
 java -cp "target/classes;C:\repos\sam\sam-commons\target\classes;C:\repos\mongoTest\lib\*" com.sam.repo.tests.MongoTest
+
+*** from 0
+agregar host en nodos con ip internas
+172.31.43.74 srv1.mongoaurelio.xyz
+172.31.44.109 srv2.mongoaurelio.xyz
+mkdir mongo/auto
+mongod --dbpath /home/ubuntu/mongo/auto --port 27026 --bind_ip srv1.mongoaurelio.xyz --fork --logpath logs/mongo.log
+mongo --host srv1.mongoaurelio.xyz  --port 27026
+use sam-db
+create collection y users solo en primary (creo)
+db.createUser( { user: 'admin', pwd: '1234qwer', roles: [ { role: 'root', db: 'admin' } ] } ) //use admin
+db.createUser( { user: "mongoUser", pwd: "1234qwer", roles: [ { role: "readWrite", db: "sam-db" } ] } ) //use sam-db
+inicar todos
+mongod --dbpath /home/ubuntu/mongo/auto --port 27026 --bind_ip srv1.mongoaurelio.xyz --replSet rs0 --fork --logpath logs/mongo.log
+mongo --host srv1.mongoaurelio.xyz --port 27026
+shutdownall
+
+pasos:
+generar los nuevos
+subirlos
+mover todos
+reiniciar nodos
+
+- function: getSimpleChildExecutor
+    args: 
+      name: removingFiles
+      cmd: "rm -f mongo* *.p12"
