@@ -9,7 +9,11 @@ bashrc
 my_ip=$(curl http://checkip.amazonaws.com)
 my_private=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
 my_dns=$(curl http://169.254.169.254/latest/meta-data/public-hostname)
-node_path=/home/ubuntu/mongo/newVerNode/
+node_path=/home/ubuntu/mongo/auto
+pem_path=/home/ubuntu/tls/auto/actual/mongo.pem
+ca_path=/home/ubuntu/tls/auto/actual/mongoCA.crt
+log_to=/home/ubuntu/logs/mongo.log
+my_host=srv1.mongoaurelio.xyz
 
 https://catalin.works/blog/bind9-dns-setup-local-domain-names/
 https://aws.amazon.com/es/premiumsupport/knowledge-center/ec2-static-dns-ubuntu-debian/
@@ -55,7 +59,11 @@ mongod --auth --dbpath $node_path --port 27026 --bind_ip $my_dns --tlsMode requi
 mongod --auth --dbpath $node_path --port 27026 --bind_ip $my_dns --tlsMode requireTLS --tlsCertificateKeyFile tls/test/mongo3.pem --tlsCAFile tls/test/mongoCA.crt --clusterAuthMode x509 --tlsClusterFile tls/test/mongo3.pem --replSet rs0 --fork --logpath logs/mongo.log
 *** good ones
 mongod --auth --dbpath /home/ubuntu/mongo/auto --port 27026 --bind_ip srv3.mongoaurelio.xyz --tlsMode requireTLS --tlsCertificateKeyFile tls/auto/actual/mongo.pem --tlsCAFile tls/auto/actual/mongoCA.crt --clusterAuthMode x509 --tlsClusterFile tls/auto/actual/mongo.pem --replSet rs0 --fork --logpath logs/mongo.log
-mongo --tls --tlsCAFile tls/auto/actual/mongoCA.crt --tlsCertificateKeyFile tls/auto/actual/mongo.pem --host srv1.mongoaurelio.xyz -u admin -p '1234qwer' --port 27026 -authenticationDatabase 'admin'
+mongo --tls --tlsCAFile $ca_path --tlsCertificateKeyFile $pem_path --host $my_host -u admin -p '1234qwer' --port 27026 -authenticationDatabase 'admin'
+
+** very good
+mongod --auth --dbpath $node_path --port 27026 --bind_ip $my_host --tlsMode requireTLS --tlsCertificateKeyFile $pem_path --tlsCAFile $ca_path --clusterAuthMode x509 --tlsClusterFile $pem_path --replSet rs0 --fork --logpath $log_to
+mongo --tls --tlsCAFile $ca_path --tlsCertificateKeyFile $pem_path --host $my_host -u admin -p '1234qwer' --port 27026 -authenticationDatabase 'admin'
 ***
 mongo --tls --tlsCAFile tls/test/mongoCA.crt --tlsCertificateKeyFile tls/test/mongo3.pem --host $my_dns -u admin -p '1234qwer' --port 27026 -authenticationDatabase 'admin'
 
@@ -81,6 +89,8 @@ rs.shutdownServer()
 testing:
 java -cp "target/classes;C:\repos\sam\sam-commons\target\classes;C:\repos\mongoTest\lib\*" com.sam.repo.tests.MongoTest
 
+--tlsAllowInvalidHostnames
+
 *** from 0
 agregar host en nodos con ip internas
 172.31.43.74 srv1.mongoaurelio.xyz
@@ -89,7 +99,7 @@ mkdir mongo/auto
 mongod --dbpath /home/ubuntu/mongo/auto --port 27026 --bind_ip srv1.mongoaurelio.xyz --fork --logpath logs/mongo.log
 mongo --host srv1.mongoaurelio.xyz  --port 27026
 use sam-db
-create collection y users solo en primary (creo)
+create collection y users solo en primary el admin en todos
 db.createUser( { user: 'admin', pwd: '1234qwer', roles: [ { role: 'root', db: 'admin' } ] } ) //use admin
 db.createUser( { user: "mongoUser", pwd: "1234qwer", roles: [ { role: "readWrite", db: "sam-db" } ] } ) //use sam-db
 inicar todos
