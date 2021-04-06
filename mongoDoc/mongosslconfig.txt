@@ -69,7 +69,9 @@ mongo --tls --tlsCAFile tls/test/mongoCA.crt --tlsCertificateKeyFile tls/test/mo
 
 change config:
 cfg = rs.conf()
-cfg.members[0].host = "ec2-3-134-94-64.us-east-2.compute.amazonaws.com:27026"
+cfg.members[0].host = "srv1.pablitoclavounclavito.xyz:27026"
+cfg.members[1].host = "srv2.pablitoclavounclavito.xyz:27026"
+cfg.members[2].host = "srv3.pablitoclavounclavito.xyz:27026"
 rs.reconfig(cfg)
 
 cfg.members[0].host = "ec2-3-134-94-64.us-east-2.compute.amazonaws.com:27026"
@@ -96,7 +98,7 @@ agregar host en nodos con ip internas
 172.31.43.74 srv1.mongoaurelio.xyz
 172.31.44.109 srv2.mongoaurelio.xyz
 mkdir mongo/auto
-mongod --dbpath /home/ubuntu/mongo/auto --port 27026 --bind_ip srv1.mongoaurelio.xyz --fork --logpath logs/mongo.log
+mongod --dbpath /home/ubuntu/mongo/auto --port 27026 --bind_ip srv3.mongoaurelio.xyz --fork --logpath logs/mongo.log
 mongo --host srv1.mongoaurelio.xyz  --port 27026
 use sam-db
 create collection y users solo en primary el admin en todos
@@ -117,3 +119,21 @@ reiniciar nodos
     args: 
       name: removingFiles
       cmd: "rm -f mongo* *.p12"
+	  
+	  
+*** change replica hosts
+mongod --dbpath /home/ubuntu/mongo/auto --port 27026 --bind_ip srv3.pablitoclavounclavito.xyz --fork --logpath logs/mongo.log
+mongo --host srv3.pablitoclavounclavito.xyz  --port 27026
+
+use local
+cfg = db.system.replset.findOne( { "_id": "rs0" } )
+cfg.members[0].host = "srv1.pablitoclavounclavito.xyz:27026"
+cfg.members[1].host = "srv2.pablitoclavounclavito.xyz:27026"
+cfg.members[2].host = "srv3.pablitoclavounclavito.xyz:27026"
+db.system.replset.update( { "_id": "rs0" } , cfg )
+
+
+*** create https cert
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout server.key -out server.crt
+
+
