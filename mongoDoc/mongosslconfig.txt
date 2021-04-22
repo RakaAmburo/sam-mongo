@@ -110,10 +110,8 @@ mongo --host srv1.mongoaurelio.xyz --port 27026
 shutdownall
 
 pasos:
-generar los nuevos
-subirlos
-mover todos
-reiniciar nodos
+websocket cliente servidor ejecutar una orden
+
 
 - function: getSimpleChildExecutor
     args: 
